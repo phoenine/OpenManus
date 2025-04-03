@@ -8,8 +8,14 @@ from app.exceptions import TokenLimitExceeded
 from app.logger import logger
 from app.prompt.toolcall import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.schema import TOOL_CHOICE_TYPE, AgentState, Message, ToolCall, ToolChoice
-from app.tool import CreateChatCompletion, Terminate, ToolCollection
-
+from app.tool import (
+    BrowserUseTool,
+    CreateChatCompletion,
+    FileSaver,
+    PythonExecute,
+    Terminate,
+    ToolCollection,
+)
 
 TOOL_CALL_REQUIRED = "Tool calls required but none provided"
 
@@ -24,8 +30,13 @@ class ToolCallAgent(ReActAgent):
     next_step_prompt: str = NEXT_STEP_PROMPT
 
     available_tools: ToolCollection = ToolCollection(
-        CreateChatCompletion(), Terminate()
+        CreateChatCompletion(),
+        Terminate(),
+        BrowserUseTool(),
+        FileSaver(),
+        PythonExecute(),
     )
+
     tool_choices: TOOL_CHOICE_TYPE = ToolChoice.AUTO  # type: ignore
     special_tool_names: List[str] = Field(default_factory=lambda: [Terminate().name])
 
@@ -43,6 +54,7 @@ class ToolCallAgent(ReActAgent):
 
         try:
             # Get response with tool options
+            # logger.debug(f"yf🔍 Sending request to LLM model: {self.llm.model}")
             response = await self.llm.ask_tool(
                 messages=self.messages,
                 system_msgs=(
@@ -53,6 +65,7 @@ class ToolCallAgent(ReActAgent):
                 tools=self.available_tools.to_params(),
                 tool_choice=self.tool_choices,
             )
+            # logger.debug(f"yf🔍 Raw LLM response: {response}")
         except ValueError:
             raise
         except Exception as e:
@@ -74,9 +87,28 @@ class ToolCallAgent(ReActAgent):
         self.tool_calls = tool_calls = (
             response.tool_calls if response and response.tool_calls else []
         )
-        content = response.content if response and response.content else ""
 
-        # Log response info
+        #! yf - 增加对deepseek模型的判断
+        is_deepseek = (
+            hasattr(self.llm, "model") and "deepseek" in self.llm.model.lower()
+        )
+
+        content = ""
+        if response:
+            if is_deepseek and hasattr(response, "reasoning_content"):
+                content = response.reasoning_content
+                # logger.info(
+                #     f"yf🔍 Using reasoning_content from deepseek model: {content[:100]}..."
+                # )
+            else:
+                content = response.content if hasattr(response, "content") else ""
+
+        # logger.debug(f"yf🔍 Response type: {type(response)}")
+        # logger.debug(f"yf🔍 Response has content: {hasattr(response, 'content')}")
+        # if hasattr(response, 'content'):
+        #     logger.debug(f"yf🔍 Content type: {type(response.content)}")
+        #     logger.debug(f"yf🔍 Content value: {response.content}")
+
         logger.info(f"✨ {self.name}'s thoughts: {content}")
         logger.info(
             f"🛠️ {self.name} selected {len(tool_calls) if tool_calls else 0} tools to use"
@@ -115,6 +147,27 @@ class ToolCallAgent(ReActAgent):
 
             # For 'auto' mode, continue with content if no commands but content exists
             if self.tool_choices == ToolChoice.AUTO and not self.tool_calls:
+                #! [yf]统计有多少连续的planning消息没有使用工具
+                last_planning_count = 0
+                for msg in reversed(self.memory.messages[-4:-1]):
+                    if msg.role == "assistant" and not getattr(msg, "tool_calls", None):
+                        last_planning_count += 1
+                    else:
+                        break
+
+                if (
+                    last_planning_count >= 2
+                    and hasattr(self, "next_step_prompt")
+                    and self.next_step_prompt
+                ):
+                    #! [yf]说明连续两次planning都没有使用工具，可能是提示词的问题
+                    logger.warning(
+                        f"⚠️ {self.name} has been planning without using tools for {last_planning_count} steps"
+                    )
+                    #! Add a stronger prompt to encourage tool selection
+                    reminder = "IMPORTANT: You MUST select a tool to make progress. Do not just plan - take concrete action now."
+                    if isinstance(self.next_step_prompt, str):
+                        self.next_step_prompt = f"{reminder}\n\n{self.next_step_prompt}"
                 return bool(content)
 
             return bool(self.tool_calls)
@@ -177,7 +230,13 @@ class ToolCallAgent(ReActAgent):
 
             # Execute the tool
             logger.info(f"🔧 Activating tool: '{name}'...")
-            result = await self.available_tools.execute(name=name, tool_input=args)
+            logger.info(f"==========> args type: {type(args)}, args content: {args}")
+            #! 修改报错：argument after ** must be a mapping, not str
+            # result = await self.available_tools.execute(name=name, tool_input=args)
+            result = await self.available_tools.execute(
+                name=name,
+                tool_input=args if isinstance(args, dict) else json.loads(args),
+            )
 
             # Handle special tools
             await self._handle_special_tool(name=name, result=result)

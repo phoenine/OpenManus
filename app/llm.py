@@ -29,7 +29,6 @@ from app.schema import (
     ToolChoice,
 )
 
-
 REASONING_MODELS = ["o1", "o3-mini"]
 MULTIMODAL_MODELS = [
     "gpt-4-vision-preview",
@@ -541,9 +540,7 @@ class LLM:
             multimodal_content = (
                 [{"type": "text", "text": content}]
                 if isinstance(content, str)
-                else content
-                if isinstance(content, list)
-                else []
+                else content if isinstance(content, list) else []
             )
 
             # Add images to content
@@ -732,15 +729,29 @@ class LLM:
                     temperature if temperature is not None else self.temperature
                 )
 
-            response: ChatCompletion = await self.client.chat.completions.create(
+            # response: ChatCompletion = await self.client.chat.completions.create(
+            response: ChatCompletionMessage = await self.client.chat.completions.create(
                 **params, stream=False
             )
+            # logger.debug(f"yf🔍 Raw API response: {response}")
 
             # Check if response is valid
             if not response.choices or not response.choices[0].message:
-                print(response)
+                logger.warning(f"yf⚠️ Empty or invalid response from LLM: {response}")
                 # raise ValueError("Invalid or empty response from LLM")
                 return None
+
+            #! Debugging
+            # if "deepseek" in self.model.lower():
+            #     logger.debug(f"yf🔍 Deepseek model detected: {self.model}")
+            #     logger.debug(f"yf🔍 First choice: {response.choices[0]}")
+
+            #     # Check if message has content attribute
+            #     message = response.choices[0].message
+            #     logger.debug(f"yf🔍 Has content attr: {hasattr(message, 'content')}")
+            #     if hasattr(message, "content"):
+            #         logger.debug(f"yf🔍 Content value: {message.content}")
+            #         logger.debug(f"yf🔍 Content type: {type(message.content)}")
 
             # Update token counts
             self.update_token_count(

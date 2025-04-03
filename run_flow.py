@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import time
 
 from app.agent.manus import Manus
@@ -13,7 +14,8 @@ async def run_flow():
     }
 
     try:
-        prompt = input("Enter your prompt: ")
+        # prompt = input("Enter your prompt: ")
+        prompt = sys.stdin.read().strip()
 
         if prompt.strip().isspace() or not prompt:
             logger.warning("Empty prompt provided.")

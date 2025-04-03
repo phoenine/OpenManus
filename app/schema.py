@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from typing import Any, List, Literal, Optional, Union
 
@@ -101,7 +102,9 @@ class Message(BaseModel):
         cls, content: str, base64_image: Optional[str] = None
     ) -> "Message":
         """Create a user message"""
-        return cls(role=Role.USER, content=content, base64_image=base64_image)
+        #! [yf]考虑到执行代码代码需要JSON转换
+        escaped_content = json.dumps(content, ensure_ascii=True)[1:-1]
+        return cls(role=Role.USER, content=escaped_content, base64_image=base64_image)
 
     @classmethod
     def system_message(cls, content: str) -> "Message":

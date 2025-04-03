@@ -13,6 +13,10 @@ from app.tool import PlanningTool
 
 
 class PlanningFlow(BaseFlow):
+    #! PlanningFlow 类继承自 BaseFlow，实现了基于规划的执行流程。
+    #! 它使用 LLM 实例与大语言模型交互，使用 PlanningTool 创建和管理执行计划，
+    #! 支持步骤状态管理（未开始、进行中、已完成、阻塞），根据步骤类型选择合适的执行代理，
+    #! 并提供计划创建、步骤执行和计划完成的完整流程。
     """A flow that manages planning and execution of tasks using agents."""
 
     llm: LLM = Field(default_factory=lambda: LLM())

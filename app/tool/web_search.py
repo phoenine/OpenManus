@@ -10,6 +10,7 @@ from app.tool.search import (
     BingSearchEngine,
     DuckDuckGoSearchEngine,
     GoogleSearchEngine,
+    SerperSearchEngine,
     WebSearchEngine,
 )
 
@@ -39,6 +40,7 @@ class WebSearch(BaseTool):
         "baidu": BaiduSearchEngine(),
         "duckduckgo": DuckDuckGoSearchEngine(),
         "bing": BingSearchEngine(),
+        "serper": SerperSearchEngine(),
     }
 
     async def execute(self, query: str, num_results: int = 10) -> List[str]:

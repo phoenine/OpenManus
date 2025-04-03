@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 from app.agent.manus import Manus
 from app.logger import logger
@@ -7,7 +8,8 @@ from app.logger import logger
 async def main():
     agent = Manus()
     try:
-        prompt = input("Enter your prompt: ")
+        # prompt = input("Enter your prompt: ")
+        prompt = sys.stdin.read().strip()
         if not prompt.strip():
             logger.warning("Empty prompt provided.")
             return

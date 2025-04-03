@@ -12,6 +12,8 @@ from app.tool.tool_collection import ToolCollection
 
 
 class MCPClientTool(BaseTool):
+    #! MCPClients 提供了与 MCP 服务器交互的工具集合，支持通过 SSE 或 stdio 连接到 MCP 服务器。
+    #! 它支持连接到 MCP 服务器、获取可用工具列表、执行工具调用和处理工具调用结果等操作。
     """Represents a tool proxy that can be called on the MCP server from the client side."""
 
     session: Optional[ClientSession] = None

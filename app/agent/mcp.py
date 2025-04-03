@@ -11,6 +11,9 @@ from app.tool.mcp import MCPClients
 
 
 class MCPAgent(ToolCallAgent):
+    #! MCPAgent 类是专门用于与 MCP 服务器交互的代理。
+    #! 它支持通过 SSE 或 stdio 连接到 MCP 服务器，动态管理可用工具，定期刷新工具列表，处理特殊工具执行和状态变化，并提供资源清理功能。
+
     """Agent for interacting with MCP (Model Context Protocol) servers.
 
     This agent connects to an MCP server using either SSE or stdio transport

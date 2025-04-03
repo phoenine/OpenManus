@@ -11,6 +11,8 @@ from app.schema import ROLE_TYPE, AgentState, Memory, Message
 
 
 class BaseAgent(BaseModel, ABC):
+    #! BaseAgent 类是所有代理的基础类，定义了代理的基本行为和状态管理机制。
+    #! 它包含了核心属性如名称、描述、系统提示、步骤提示、LLM实例、内存系统和状态管理等，以及核心方法如状态上下文管理、内存更新、执行循环和循环检测等。
     """Abstract base class for managing agent state and execution.
 
     Provides foundational functionality for state transitions, memory management,
@@ -71,10 +73,11 @@ class BaseAgent(BaseModel, ABC):
         if not isinstance(new_state, AgentState):
             raise ValueError(f"Invalid state: {new_state}")
 
+        #! 保存原始状态
         previous_state = self.state
         self.state = new_state
         try:
-            yield
+            yield  #! 交出控制权给 with 块内的代码
         except Exception as e:
             self.state = AgentState.ERROR  # Transition to ERROR on failure
             raise e
@@ -174,9 +177,10 @@ class BaseAgent(BaseModel, ABC):
 
         last_message = self.memory.messages[-1]
         if not last_message.content:
-            return False
+            return False  #! 最后一条消息无内容，跳过判断
 
         # Count identical content occurrences
+        #! 从后往前遍历，找到最后一条 assistant 发送的消息
         duplicate_count = sum(
             1
             for msg in reversed(self.memory.messages[:-1])

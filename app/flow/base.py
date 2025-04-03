@@ -12,6 +12,9 @@ class FlowType(str, Enum):
 
 
 class BaseFlow(BaseModel, ABC):
+    #! BaseFlow 类是所有流程的抽象基类，定义了流程的基本行为。
+    #! 它管理多个代理实例，存储在 agents 字典中，支持多种方式提供代理（单个代理、代理列表或代理字典），定义了主代理的概念，
+    #! 通过 primary_agent_key 指定，并要求子类实现 execute 方法。
     """Base class for execution flows supporting multiple agents"""
 
     agents: Dict[str, BaseAgent]

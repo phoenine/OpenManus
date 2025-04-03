@@ -7,10 +7,14 @@ from app.tool.base import BaseTool
 
 
 class PythonExecute(BaseTool):
+    #! PythonExecute 工具用于执行 Python 代码，它允许代理运行 Python 脚本并获取执行结果。
+    #! 它支持在沙箱环境中执行 Python 代码，支持文件路径或直接代码字符串，并处理执行结果和错误。
     """A tool for executing Python code with timeout and safety restrictions."""
 
     name: str = "python_execute"
-    description: str = "Executes Python code string. Note: Only print outputs are visible, function return values are not captured. Use print statements to see results."
+    description: str = (
+        "Executes Python code string. Note: Only print outputs are visible, function return values are not captured. Use print statements to see results."
+    )
     parameters: dict = {
         "type": "object",
         "properties": {
